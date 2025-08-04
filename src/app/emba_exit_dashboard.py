@@ -1,11 +1,31 @@
-import streamlit as st
+"""Rendering the main page of an report app."""
 
-from app.sections import base_distributions, grades_analysis, nps, other, pilos
+import streamlit as st
 from backend.data_extractors import ExitEmbaExtractor
 from backend.raw_data_processor import process_exit_survey
 
+from app.sections import (
+    base_distributions,
+    download,
+    grades_analysis,
+    nps,
+    other,
+    pilos,
+)
+
 # Page config
 st.set_page_config(page_title="EMBA-35 report", layout="wide")
+st.markdown(
+    """
+    ## Отчет EMBA-35
+<div style='font-size:18px'>
+    Опрос проводится после итоговой аттестации среди студентов, завершивших обучение.<br>
+    Он включает <strong>15</strong> вопросов об оценке программы, результатов, команды и предпочтениях в общении со Школой.<br>
+    <strong>Цель:</strong> получить обратную связь выпускников для улучшения программы, использования в маркетинге, подготовки аккредитационной отчётности.<br><br>
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 # Sidebar
 st.sidebar.title("Фильтры")
@@ -18,7 +38,7 @@ with st.sidebar:
             "NPS",
             "PILOs",
             "Прочие графики",
-            "Pairings",
+            "Скачать отчет",
         ],
     )
 
@@ -53,6 +73,16 @@ if st.session_state.survey_processed:
         pilos.render(emba_extractor)
     if "Прочие графики" in section_types:
         other.render(emba_extractor)
+    if "Скачать отчет" in section_types:
+        if st.button("Скачать отчет"):
+            docx_path = download.generate_docx(emba_extractor)
+    if "Pairings" in section_types:
+        st.header("Pairings")
+        st.markdown("#### Coming soon...")
+        other.render(emba_extractor)
+    if "Скачать отчет" in section_types:
+        if st.button("Скачать отчет"):
+            docx_path = download.generate_docx(emba_extractor)
     if "Pairings" in section_types:
         st.header("Pairings")
         st.markdown("#### Coming soon...")

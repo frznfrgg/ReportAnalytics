@@ -1,12 +1,30 @@
-import streamlit as st
+from typing import Union
 
+import pandas as pd
+import streamlit as st
+from backend.data_extractors import ExitEmbaExtractor
 from backend.plotter import PlotGenerator
 
 
-def render(emba_extractor):
+def render(emba_extractor: ExitEmbaExtractor) -> None:
+    """Render boxplot visualizations and CSI summary using Streamlit.
+
+    Displays:
+    - Customer Satisfaction Index (CSI) for the program.
+    - Boxplots for various components of the educational experience.
+
+    Args:
+        emba_extractor (ExitEmbaExtractor): Data extractor providing CSI-related survey results.
+    """
     st.header("Анализ оценок")
 
-    def _render_boxplot(title, data):
+    def _render_boxplot(title: str, data: Union[pd.Series, pd.DataFrame]) -> None:
+        """Render a boxplot inside a collapsible Streamlit expander.
+
+        Args:
+            title (str): Title for the plot and expander section.
+            data (Union[pd.Series, pd.DataFrame]): DataFrame or Series used for boxplot generation.
+        """
         fig = PlotGenerator.make_boxplot(data=data, title=title)
         with st.expander(title):
             st.plotly_chart(fig, use_container_width=True)
@@ -25,5 +43,7 @@ def render(emba_extractor):
     _render_boxplot(
         "Оценка международных модулей", emba_extractor.get_intern_modules_csi()
     )
+    _render_boxplot("Оценка работы команды курса", emba_extractor.get_support_csi())
+    _render_boxplot("Оценка качества группы", emba_extractor.get_group_csi())
     _render_boxplot("Оценка работы команды курса", emba_extractor.get_support_csi())
     _render_boxplot("Оценка качества группы", emba_extractor.get_group_csi())

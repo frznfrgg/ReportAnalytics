@@ -1,11 +1,33 @@
+"""Classes for creating various plots."""
+
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.colors import sample_colorscale
 
 
 class PlotGenerator:
+    """A utility class for generating various types of interactive plots using Plotly.
+
+    This class provides reusable methods to construct common survey visualizations such
+    as boxplots, pie charts, NPS barplots, horizontal barplots, and stacked barplots. It
+    also includes helpers to add custom titles, background shapes, and dummy legends.
+
+    Class Attributes:
+        title_template (dict): Default layout template for plot titles.
+        
+        rectangle_template (dict): Default template for background rectangle shapes.
+
+    Methods:
+        make_boxplot: Generates a boxplot for grouped numerical data.
+        make_piechart: Creates a donut-style pie chart with total annotation.
+        make_nps_barplot: Builds a customized barplot for Net Promoter Score analysis.
+        make_stacked_barplot: Constructs a stacked barplot with weighted means.
+        make_hbarplot: Produces a horizontal barplot with color encoding.
+    """
+
     title_template = {
         "text": "SAMPLE_TITLE",
         "x": 0.45,
@@ -28,7 +50,15 @@ class PlotGenerator:
     )
 
     @classmethod
-    def _make_title(cls, title_text: str):
+    def _make_title(cls, title_text: str) -> dict:
+        """Create a plot title dictionary based on the class template.
+
+        Args:
+            title_text (str): The title text to display.
+
+        Returns:
+            dict: A dictionary representing the plot title layout.
+        """
         title = cls.title_template.copy()
         title["text"] = title_text
         return title
@@ -36,15 +66,33 @@ class PlotGenerator:
     # used in nps barplots as backgroud
     @classmethod
     def _edit_shape(cls, y0: int, y1: int, color: str) -> dict:
+        """Create a rectangular shape dictionary for plot background highlighting.
+
+        Args:
+            y0 (int): The lower bound on the y-axis.
+            y1 (int): The upper bound on the y-axis.
+            color (str): The fill color of the rectangle.
+
+        Returns:
+            dict: A dictionary representing the shape layout.
+        """
         shape = cls.rectangle_template.copy()
         shape["fillcolor"] = color
         shape["y0"] = y0
         shape["y1"] = y1
         return shape
 
-    # used to make legends for non-data objects in plot (e.g. background shapes)
     @staticmethod
-    def _make_legend(legend_text: str, color: str) -> dict:
+    def _make_legend(legend_text: str, color: str) -> go.Scatter:
+        """Create a dummy invisible scatter trace to serve as a custom legend item.
+
+        Args:
+            legend_text (str): The label text for the legend.
+            color (str): The marker color for the legend.
+
+        Returns:
+            go.Scatter: A Plotly scatter trace configured for the legend.
+        """
         dummy_legend = dict(
             x=[None],
             y=[None],
@@ -57,6 +105,15 @@ class PlotGenerator:
 
     @classmethod
     def make_boxplot(cls, data: Dict[str, List[float]], title: str) -> go.Figure:
+        """Generate a boxplot figure with grouped data.
+
+        Args:
+            data (Dict[str, List[float]]): Dictionary mapping group names to numerical data.
+            title (str): Title of the plot.
+
+        Returns:
+            go.Figure: Plotly figure object with boxplot traces.
+        """
         fig = go.Figure()
         for name in data.keys():
             fig.add_trace(go.Box(y=data[name], name=name, boxmean=True))
@@ -67,6 +124,15 @@ class PlotGenerator:
 
     @classmethod
     def make_piechart(cls, data: Dict[str, float], title: str) -> go.Figure:
+        """Generate a donut-style pie chart with total value annotation.
+
+        Args:
+            data (Dict[str, float]): Dictionary mapping labels to values.
+            title (str): Title of the plot.
+
+        Returns:
+            go.Figure: Plotly figure object with a pie chart.
+        """
         total = sum(list(data.values()))
         fig = go.Figure()
         fig.add_trace(
@@ -87,6 +153,17 @@ class PlotGenerator:
     def make_nps_barplot(
         cls, barnames: List[str], values: List[int], colors: List[str], title: str
     ) -> go.Figure:
+        """Generate a Net Promoter Score (NPS) styled barplot with color-coded background.
+
+        Args:
+            barnames (List[str]): Names for each bar.
+            values (List[int]): Numerical values for each bar.
+            colors (List[str]): Colors corresponding to each bar.
+            title (str): Title of the plot.
+
+        Returns:
+            go.Figure: Plotly figure object with NPS barplot.
+        """
         fig = go.Figure()
         fig.add_trace(
             go.Bar(
@@ -125,7 +202,18 @@ class PlotGenerator:
         title: str,
         x_axs_title: str = "x",
         y_axs_title: str = "y",
-    ):
+    ) -> go.Figure:
+        """Generate a stacked barplot with color-coded scores and weighted mean annotations.
+
+        Args:
+            score_counts (pd.DataFrame): DataFrame containing counts per score per category.
+            title (str): Title of the plot.
+            x_axs_title (str, optional): Label for the x-axis. Defaults to "x".
+            y_axs_title (str, optional): Label for the y-axis. Defaults to "y".
+
+        Returns:
+            go.Figure: Plotly figure object with stacked barplot.
+        """
         fig = go.Figure()
         colors = sample_colorscale("RdYlGn", [i / 9 for i in range(10)])
         for score in range(1, 11):
@@ -137,6 +225,24 @@ class PlotGenerator:
                     marker_color=colors[score - 1],
                 )
             )
+
+        # calculate weighted means for each bar
+        scores = np.arange(1, 11)
+        counts = score_counts.loc[:, 1:10].values  # [n_categories, 10]
+        weighted_means = (counts * scores).sum(axis=1) / counts.sum(axis=1)
+
+        fig.add_trace(
+            go.Scatter(
+                x=score_counts["param"],
+                y=counts.sum(axis=1) + 0.5,
+                mode="text",
+                text=[f"{wm:.2f}" for wm in weighted_means],
+                textposition="top center",
+                showlegend=False,
+                hovertemplate="Среднее<extra></extra>",
+            )
+        )
+
         fig.update_layout(
             height=600,
             title=cls._make_title(title),
@@ -154,7 +260,18 @@ class PlotGenerator:
         title: str,
         x_axs_title: str = "x",
         y_axs_title: str = "y",
-    ):
+    ) -> go.Figure:
+        """Generate a horizontal barplot with color-coded bars based on values.
+
+        Args:
+            score_counts (Dict[str, int]): Dictionary mapping categories to values.
+            title (str): Title of the plot.
+            x_axs_title (str, optional): Label for the x-axis. Defaults to "x".
+            y_axs_title (str, optional): Label for the y-axis. Defaults to "y".
+
+        Returns:
+            go.Figure: Plotly figure object with horizontal barplot.
+        """
         fig = go.Figure()
         num_colors = len(set(score_counts.values()))
         palette = sample_colorscale(

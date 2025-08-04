@@ -1,0 +1,1 @@
+In this module you will find methods that are used for rendering sections in the main web page.

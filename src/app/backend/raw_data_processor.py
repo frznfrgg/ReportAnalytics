@@ -1,4 +1,4 @@
-"""Add classes for processing raw survey tables"""
+"""Add classes and funtioncs for processing raw survey tables here."""
 
 from io import BytesIO
 from typing import IO
@@ -6,7 +6,25 @@ from typing import IO
 import pandas as pd
 
 
-def process_exit_survey(raw_table: str | IO):
+def process_exit_survey(raw_table: str | IO) -> BytesIO:
+    """Cleans and preprocesses raw exit survey data from an Excel file or stream.
+
+    The function performs the following steps:
+    - Loads the Excel data, skipping header rows.
+    - Drops irrelevant columns including service and unnamed columns.
+    - Removes rows missing participant names.
+    - Fills missing professor names with a placeholder.
+    - Imputes missing ages with the median age.
+    - Fills missing scores in selected columns with column means.
+    - Sets default text for missing answers in specified free-answer columns.
+    - Returns the cleaned data as an in-memory Excel file stream.
+
+    Args:
+        raw_table (str | IO): Path to the Excel file or file-like object containing raw survey data.
+
+    Returns:
+        BytesIO: In-memory binary stream containing the cleaned Excel data.
+    """
     raw_data = pd.read_excel(raw_table, skiprows=[0, 2, 3])
 
     service_cols = [col for col in raw_data.columns if col.startswith("S")]

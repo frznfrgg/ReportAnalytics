@@ -1,12 +1,37 @@
-import streamlit as st
+from typing import Union
 
+import pandas as pd
+import streamlit as st
+from backend.data_extractors import ExitEmbaExtractor
 from backend.plotter import PlotGenerator
 
 
-def render(emba_extractor):
+def render(emba_extractor: ExitEmbaExtractor) -> None:
+    """Render horizontal bar charts for additional survey insights using Streamlit.
+
+    Displays:
+    - Top-voted lecturers.
+    - Areas where alumni are willing to collaborate.
+
+    Args:
+        emba_extractor (ExitEmbaExtractor): Extractor providing survey-derived insights.
+    """
     st.header("Прочее")
 
-    def _render_hbar(title, data, x_axs_title, y_axs_title):
+    def _render_hbar(
+        title: str,
+        data: Union[pd.Series, pd.DataFrame],
+        x_axs_title: str,
+        y_axs_title: str,
+    ) -> None:
+        """Render a horizontal bar chart inside a collapsible Streamlit expander.
+
+        Args:
+            title (str): Title of the plot and expander.
+            data (Union[pd.Series, pd.DataFrame]): Data to plot; typically a Series of counts.
+            x_axs_title (str): Label for the x-axis.
+            y_axs_title (str): Label for the y-axis.
+        """
         fig = PlotGenerator.make_hbarplot(
             score_counts=data,
             title=title,
