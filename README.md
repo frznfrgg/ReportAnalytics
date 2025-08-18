@@ -8,7 +8,7 @@ Follow the steps below to run the project locally:
    Using Conda:
    ```bash
    conda env create -f environment.yml
-   conda activate myenv
+   conda activate skolkovo
    ```
 
    Using pip:
